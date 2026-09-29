@@ -4,7 +4,9 @@
 
 # Boundless
 
-**Manga, manhwa, comics and novels. One library, every device.**
+**For the chapter you swore was your last.**
+
+A reader for manga, manhwa, comics and novels on iPhone, iPad, Android and Mac.
 
 [![Latest release](https://img.shields.io/github/v/release/BoundlessReader/Boundless?style=flat-square&label=release&color=7c5cff)](https://github.com/BoundlessReader/Boundless/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/BoundlessReader/Boundless/total?style=flat-square&color=7c5cff)](https://github.com/BoundlessReader/Boundless/releases)
@@ -25,15 +27,13 @@
 
 Updating from an earlier version keeps your library, progress and settings. On Android, stick to one channel: an APK from here can't update a Google Play install, or the other way round.
 
-## What it does
+## What's in it
 
-- **Every kind of story.** Manga, manhwa, webtoons, comics and novels live in one library.
-- **Sources you choose.** Add extension repos and browse, search and read from them. Cloudflare checks are handled quietly in the background.
-- **Readers built for each format.** Paged, long strip, right to left and page curl for comics. Scrolling or paged layouts for novels, with your own fonts and sizes.
-- **Offline.** Download chapters, or import your own CBZ, CBR, EPUB and text files.
-- **Tracking.** AniList, MyAnimeList, Kitsu, MangaUpdates, MangaBaka, Shikimori and Bangumi.
-- **Your devices, in sync.** Library, progress and settings follow you across phone, tablet and Mac.
-- **Private by default.** App Lock, incognito reading and parental controls.
+Read from the sources you add, or from your own CBZ, CBR, EPUB and text files. Comics can be paged, long strip or right to left, with a page curl if you miss paper. Novels scroll or turn like a book, in whatever font and size suit your eyes at 2am.
+
+Download chapters for the commute. Log what you read on AniList, MyAnimeList, Kitsu, MangaUpdates, MangaBaka, Shikimori or Bangumi. Your library and your place in every series follow you from phone to tablet to Mac.
+
+Sites behind Cloudflare mostly just work, so you'll rarely see a "checking your browser" page. App Lock, incognito reading and parental controls are there when you want them.
 
 ## Help and feedback
 
