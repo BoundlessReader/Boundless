@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and help
+    url: https://github.com/BoundlessReader/Boundless/discussions
+    about: Ask how something works, or share tips with other readers.
+  - name: Discord
+    url: https://discord.gg/BDbk4AYV72
+    about: Chat with the community and the developer.
+  - name: Private support
+    url: mailto:support@boundless.moe
+    about: Account, purchase or privacy questions you'd rather not post publicly.

@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest something new, or a better way to do something.
+title: "[Feature] "
+labels: ["feature", "triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The problem or moment that made you want this.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: How you picture it working. Mockups and examples from other apps are welcome.
+    validations:
+      required: true
+  - type: dropdown
+    id: platforms
+    attributes:
+      label: Platforms
+      multiple: true
+      options:
+        - iPhone
+        - iPad
+        - Android
+        - Mac
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched existing issues and discussions, and gave a thumbs up if I found a match.
+          required: true

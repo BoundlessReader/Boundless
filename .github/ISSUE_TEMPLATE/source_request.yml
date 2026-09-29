@@ -1,0 +1,50 @@
+name: Source request
+description: Ask for a site to be added as a source.
+title: "[Source] "
+labels: ["source request", "triage"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Site name
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Site URL
+      placeholder: https://
+    validations:
+      required: true
+  - type: dropdown
+    id: content
+    attributes:
+      label: What does it host?
+      multiple: true
+      options:
+        - Manga
+        - Manhwa or webtoons
+        - Manhua
+        - Comics
+        - Novels
+    validations:
+      required: true
+  - type: input
+    id: language
+    attributes:
+      label: Language
+      placeholder: English
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else?
+      description: Does it need an account, is it behind Cloudflare, does it have titles other sources don't?
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I checked the source list in the app and searched existing requests.
+          required: true

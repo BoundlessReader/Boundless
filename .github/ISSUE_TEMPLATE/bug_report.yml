@@ -1,0 +1,71 @@
+name: Bug report
+description: Something isn't working the way it should.
+title: "[Bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. A clear report gets fixed faster.
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - iPhone
+        - iPad
+        - Android
+        - Mac
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Settings, then scroll to the bottom.
+      placeholder: 3.0.0 (120)
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and OS version
+      placeholder: Pixel 8, Android 16
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: And what did you expect to happen instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Tap ...
+        3. See ...
+    validations:
+      required: true
+  - type: input
+    id: source
+    attributes:
+      label: Source, if it's about one
+      placeholder: The source name and the title you were reading
+  - type: textarea
+    id: logs
+    attributes:
+      label: Screenshots or error log
+      description: Settings > Error Log lets you copy recent errors. Drag screenshots or recordings in here.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched existing issues and this isn't a duplicate.
+          required: true
+        - label: I'm on the latest version.
+          required: true
