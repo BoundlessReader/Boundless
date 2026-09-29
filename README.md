@@ -4,9 +4,9 @@
 
 # Boundless
 
-**For the chapter you swore was your last.**
+**The best manga, manhwa, comics and light novel reader.**
 
-A reader for manga, manhwa, comics and novels on iPhone, iPad, Android and Mac.
+On iPhone, iPad, Android and Mac.
 
 [![Latest release](https://img.shields.io/github/v/release/BoundlessReader/Boundless?style=flat-square&label=release&color=7c5cff)](https://github.com/BoundlessReader/Boundless/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/BoundlessReader/Boundless/total?style=flat-square&color=7c5cff)](https://github.com/BoundlessReader/Boundless/releases)
