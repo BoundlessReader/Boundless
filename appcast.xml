@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0"
+     xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle"
+     xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>Boundless</title>
+    <link>https://boundless.moe</link>
+    <description>Boundless release history.</description>
+    <language>en</language>
+    <item>
+      <title>Version 3.1.0</title>
+      <sparkle:version>125</sparkle:version>
+      <sparkle:shortVersionString>3.1.0</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
+      <pubDate>Thu, 01 Oct 2026 19:58:29 +0000</pubDate>
+      <enclosure
+        url="https://github.com/BoundlessReader/Boundless/releases/download/v3.1.0/boundless-v3.1.0-macos.dmg"
+        sparkle:edSignature="+MLXK6n9sxQ+w1om8Z5i+i4/Ijct/5TsV9kcqkNVOdtEQ5FArFciP3k95CdD/Oxy6g80HiCKSKE9Simx+Kw0DQ=="
+        length="41910533"
+        type="application/octet-stream"/>
+    </item>
+  </channel>
+</rss>
