@@ -34,6 +34,14 @@ On iPhone, iPad, Android and Mac.
 | Android | Google Play, or the APK from [the latest release](https://github.com/BoundlessReader/Boundless/releases/latest) |
 | Mac | The DMG from [the latest release](https://github.com/BoundlessReader/Boundless/releases/latest) |
 
+**Mac, from Terminal**
+
+```bash
+bash <(curl -fsSL "https://raw.githubusercontent.com/BoundlessReader/Boundless/main/install.sh")
+```
+
+This installs or updates Boundless in /Applications and checks the download against the checksum GitHub publishes for it. The script is [install.sh](install.sh), so you can read it first.
+
 Updating from an earlier version keeps your library, progress and settings. On Android, stick to one channel: an APK from here can't update a Google Play install, or the other way round.
 
 ## What's in it
