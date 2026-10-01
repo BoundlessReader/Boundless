@@ -1,8 +1,6 @@
 <div align="center">
 
-<img src=".github/assets/icon.png" width="128" height="128" alt="Boundless icon">
-
-# Boundless
+<img src=".github/assets/banner.png" width="100%" alt="Boundless: comics, manga and novels, one liquid glass library">
 
 **The best manga, manhwa, comics and light novel reader.**
 
@@ -15,6 +13,17 @@ On iPhone, iPad, Android and Mac.
 
 [Download](#download) · [Report a bug](https://github.com/BoundlessReader/Boundless/issues/new?template=bug_report.yml) · [Request a feature](https://github.com/BoundlessReader/Boundless/issues/new?template=feature_request.yml) · [Request a source](https://github.com/BoundlessReader/Boundless/issues/new?template=source_request.yml)
 
+</div>
+
+<div align="center">
+<img src=".github/assets/screens/01-library.jpg" width="24%" alt="Library: everything you read in one place">
+<img src=".github/assets/screens/02-comics.jpg" width="24%" alt="Comics that fill the screen">
+<img src=".github/assets/screens/03-novels.jpg" width="24%" alt="Novels, set just how you like them">
+<img src=".github/assets/screens/04-details.jpg" width="24%" alt="Every title, beautifully laid out">
+<br>
+<img src=".github/assets/screens/05-browse.jpg" width="24%" alt="Browse the sources you choose">
+<img src=".github/assets/screens/06-server.jpg" width="24%" alt="Bring your own Komga library">
+<img src=".github/assets/screens/07-appearance.jpg" width="24%" alt="Themes, accents and app icons">
 </div>
 
 ## Download
