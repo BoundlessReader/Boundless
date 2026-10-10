@@ -9,14 +9,14 @@
     <language>en</language>
     <item>
       <title>Version 3.3.7</title>
-      <sparkle:version>138</sparkle:version>
+      <sparkle:version>139</sparkle:version>
       <sparkle:shortVersionString>3.3.7</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
-      <pubDate>Fri, 09 Oct 2026 23:37:13 +0000</pubDate>
+      <pubDate>Sat, 10 Oct 2026 10:35:32 +0000</pubDate>
       <enclosure
         url="https://github.com/BoundlessReader/Boundless/releases/download/v3.3.7/boundless-v3.3.7-macos.dmg"
-        sparkle:edSignature="d5Zj78nJq8/cSD+wIzSaaQen04pkfHCm5APuwpBNiqkQ9wnwBl2AtBqbwUKLQmMTEs0QIiZe1eTS+Bs21oE3CA=="
-        length="41639175"
+        sparkle:edSignature="YJgpXJcbSOIQgOttmfG1S8/IBS1C5QbAg++f9Tuc/JGg59onHoNgzAg3diPVWsd+Kw26ITtwyHpH+5RSjVp6CA=="
+        length="42251756"
         type="application/octet-stream"/>
     </item>
     <item>
