@@ -9,14 +9,14 @@
     <language>en</language>
     <item>
       <title>Version 3.3.12</title>
-      <sparkle:version>149</sparkle:version>
+      <sparkle:version>150</sparkle:version>
       <sparkle:shortVersionString>3.3.12</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
-      <pubDate>Wed, 14 Oct 2026 07:10:03 +0000</pubDate>
+      <pubDate>Wed, 14 Oct 2026 07:39:58 +0000</pubDate>
       <enclosure
         url="https://github.com/BoundlessReader/Boundless/releases/download/v3.3.12/boundless-v3.3.12-macos.dmg"
-        sparkle:edSignature="1X1Isg+XDO5KP+FhvVdrOjmw0iODMG9qUkT4obzMulLNCECQd9NTcXYEuDPmDiInTog0w4WakccFZXfMQDiJAg=="
-        length="44800310"
+        sparkle:edSignature="yNF1Ibz2Wxsy6Dpa8rggkKwoAexnsrHKNbbDS+ji5WS2gJctoK4EPZqzU1K97Lg5YdRw8pZ5yIQetSPomFC9AA=="
+        length="44814989"
         type="application/octet-stream"/>
     </item>
     <item>
