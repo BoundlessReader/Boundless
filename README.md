@@ -11,7 +11,7 @@ On iPhone, iPad, Android and Mac.
 [![Discord](https://img.shields.io/badge/Discord-join-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/BDbk4AYV72)
 [![Website](https://img.shields.io/badge/boundless.moe-visit-111111?style=flat-square)](https://boundless.moe)
 
-[Download](#download) · [Report a bug](https://github.com/BoundlessReader/Boundless/issues/new?template=bug_report.yml) · [Request a feature](https://github.com/BoundlessReader/Boundless/issues/new?template=feature_request.yml) · [Request a source](https://github.com/BoundlessReader/Boundless/issues/new?template=source_request.yml)
+[Download](#download) · [Report a bug](https://github.com/BoundlessReader/Boundless/issues/new?template=bug_report.yml) · [Request a feature](https://github.com/BoundlessReader/Boundless/issues/new?template=feature_request.yml)
 
 </div>
 
@@ -56,7 +56,6 @@ Sites behind Cloudflare mostly just work, so you'll rarely see a "checking your 
 
 - **Something broken?** [Open a bug report](https://github.com/BoundlessReader/Boundless/issues/new?template=bug_report.yml). The error log in Settings helps a lot.
 - **Have an idea?** [Suggest a feature](https://github.com/BoundlessReader/Boundless/issues/new?template=feature_request.yml).
-- **Missing a site?** [Request a source](https://github.com/BoundlessReader/Boundless/issues/new?template=source_request.yml).
 - **Questions and chat:** [Discussions](https://github.com/BoundlessReader/Boundless/discussions) or [Discord](https://discord.gg/BDbk4AYV72).
 - **Anything private:** support@boundless.moe.
 
