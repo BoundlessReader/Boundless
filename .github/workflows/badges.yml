@@ -1,0 +1,64 @@
+name: Badges
+
+# Keeps the two README badges that used to come from shields.io's GitHub
+# services (which fail whenever shields.io runs out of GitHub tokens) as plain
+# JSON on the badges branch. The README reads them through shields.io's
+# endpoint badge, which only fetches that JSON.
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  release:
+    types: [published, deleted]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: badges
+  cancel-in-progress: false
+
+jobs:
+  badges:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write the badge files and publish them when they changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+
+          total=$(gh api --paginate "repos/$repo/releases?per_page=100" \
+            --jq '[.[].assets[].download_count] | add // 0' \
+            | awk '{ s += $1 } END { print s + 0 }')
+          latest=$(gh api "repos/$repo/releases/latest" --jq .tag_name)
+
+          compact=$(awk -v n="$total" 'BEGIN {
+            if (n >= 1000000) printf "%.1fM", n / 1e6
+            else if (n >= 1000) printf "%.1fk", n / 1e3
+            else printf "%d", n
+          }' | sed 's/\.0\([kM]\)/\1/')
+
+          mkdir out live
+          printf '{"schemaVersion":1,"label":"downloads","message":"%s","color":"7c5cff"}\n' "$compact" > out/downloads.json
+          printf '{"schemaVersion":1,"label":"release","message":"%s","color":"7c5cff"}\n' "$latest" > out/release.json
+
+          changed=0
+          for file in downloads.json release.json; do
+            curl -fsS "https://raw.githubusercontent.com/$repo/badges/$file?t=$(date +%s)" -o "live/$file" 2>/dev/null || changed=1
+            cmp -s "out/$file" "live/$file" || changed=1
+          done
+          if [ "$changed" = 0 ]; then
+            echo "Badges are current: $compact downloads, $latest."
+            exit 0
+          fi
+
+          cd out
+          git init -q -b badges
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add downloads.json release.json
+          git commit -q -m "Update badges: $compact downloads, $latest"
+          git push -q --force "https://x-access-token:${GH_TOKEN}@github.com/${repo}.git" badges
+          echo "Published $compact downloads, $latest."
