@@ -6,8 +6,8 @@
 
 On iPhone, iPad, Android and Mac.
 
-[![Latest release](https://img.shields.io/github/v/release/BoundlessReader/Boundless?style=flat-square&label=release&color=7c5cff)](https://github.com/BoundlessReader/Boundless/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/BoundlessReader/Boundless/total?style=flat-square&label=downloads&color=7c5cff)](https://github.com/BoundlessReader/Boundless/releases)
+[![Latest release](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FBoundlessReader%2FBoundless%2Fbadges%2Frelease.json&style=flat-square)](https://github.com/BoundlessReader/Boundless/releases/latest)
+[![Downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FBoundlessReader%2FBoundless%2Fbadges%2Fdownloads.json&style=flat-square)](https://github.com/BoundlessReader/Boundless/releases)
 [![Discord](https://img.shields.io/badge/Discord-join-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.gg/BDbk4AYV72)
 [![Website](https://img.shields.io/badge/boundless.moe-visit-111111?style=flat-square)](https://boundless.moe)
 
