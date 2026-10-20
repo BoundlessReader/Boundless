@@ -8,6 +8,18 @@
     <description>Boundless release history.</description>
     <language>en</language>
     <item>
+      <title>Version 3.3.13</title>
+      <sparkle:version>154</sparkle:version>
+      <sparkle:shortVersionString>3.3.13</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>12.0</sparkle:minimumSystemVersion>
+      <pubDate>Tue, 20 Oct 2026 14:00:00 +0000</pubDate>
+      <enclosure
+        url="https://github.com/BoundlessReader/Boundless/releases/download/v3.3.13/boundless-v3.3.13-macos.dmg"
+        sparkle:edSignature="48ZAkBLDnD5wRhVe1ozaphZfLPNfoS1fdmtW1COhzFuEtZ5Hd7Cs0/yNr9EaKBltpm9M58BnOkLarWXWw8FdAQ=="
+        length="44914643"
+        type="application/octet-stream"/>
+    </item>
+    <item>
       <title>Version 3.3.12</title>
       <sparkle:version>153</sparkle:version>
       <sparkle:shortVersionString>3.3.12</sparkle:shortVersionString>
