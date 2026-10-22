@@ -9,18 +9,104 @@ $Repo = 'BoundlessReader/Boundless'
 $InstallDir = Join-Path $env:LOCALAPPDATA 'Programs\Boundless'
 $StartMenu = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Boundless.lnk'
 
-function Ok($m)   { Write-Host '  ' -NoNewline; Write-Host ([char]0x2713) -ForegroundColor Green -NoNewline; Write-Host "  $m" }
-function Info($m) { Write-Host '  ' -NoNewline; Write-Host ([char]0x2192) -ForegroundColor Cyan -NoNewline; Write-Host "  $m" }
-function Warn($m) { Write-Host '  ' -NoNewline; Write-Host '!' -ForegroundColor Yellow -NoNewline; Write-Host "  $m" }
-function Fail($m) { Write-Host ''; Write-Host '  ' -NoNewline; Write-Host ([char]0x2717) -ForegroundColor Red -NoNewline; Write-Host "  $m"; Write-Host ''; throw $m }
+# -- colors & styles ----------------------------------------------------------
+# Windows Terminal and PowerShell 7 take ANSI codes as is. Older consoles need
+# virtual terminal processing switched on first; if that fails, stay plain.
+$script:Ansi = $false
+try {
+  if (-not [Console]::IsOutputRedirected) {
+    Add-Type -Namespace Boundless -Name Vt -MemberDefinition @'
+[DllImport("kernel32.dll")] public static extern IntPtr GetStdHandle(int n);
+[DllImport("kernel32.dll")] public static extern bool GetConsoleMode(IntPtr h, out uint m);
+[DllImport("kernel32.dll")] public static extern bool SetConsoleMode(IntPtr h, uint m);
+'@
+    $h = [Boundless.Vt]::GetStdHandle(-11)
+    $mode = 0
+    if ([Boundless.Vt]::GetConsoleMode($h, [ref]$mode)) {
+      $script:Ansi = [Boundless.Vt]::SetConsoleMode($h, $mode -bor 4)
+    }
+  }
+} catch {}
+
+$E = [char]27
+function C($code, $text) { if ($script:Ansi) { "$E[${code}m$text$E[0m" } else { $text } }
+$Bold = { param($t) C '1' $t }
+$Dim = { param($t) C '2' $t }
+$Green = { param($t) C '0;32' $t }
+$Cyan = { param($t) C '0;36' $t }
+$Yellow = { param($t) C '1;33' $t }
+$Red = { param($t) C '0;31' $t }
+$White = { param($t) C '1;37' $t }
+
+$Check = [string][char]0x2713
+$Arrow = [string][char]0x2192
+$Cross = [string][char]0x2717
+$Dot = [string][char]0xB7
+
+function Clear-Line { if ($script:Ansi) { Write-Host -NoNewline "`r$E[2K" } else { Write-Host -NoNewline ("`r" + (' ' * 78) + "`r") } }
+function Ok($m)   { Write-Host ("  " + (& $Green $Check) + "  $m") }
+function Info($m) { Write-Host ("  " + (& $Cyan $Arrow) + "  $m") }
+function Warn($m) { Write-Host ("  " + (& $Yellow '!') + "  $m") }
+function Fail($m) { Write-Host ''; Write-Host ("  " + (& $Red $Cross) + "  $m"); Write-Host ''; throw $m }
+
+# A step that shows "-> label" while it runs, then turns into a tick.
+function Step($label, $done, [scriptblock]$work) {
+  Write-Host -NoNewline ("  " + (& $Cyan $Arrow) + "  $label")
+  try { & $work } catch { Clear-Line; throw }
+  Clear-Line
+  Ok $done
+}
+
+function Ask($question, $default) {
+  try {
+    $reply = Read-Host "  $question"
+    if ([string]::IsNullOrWhiteSpace($reply)) { return $default }
+    return $reply
+  } catch { return $default }
+}
+
+function Format-MB($bytes) { '{0:N1}' -f ($bytes / 1MB) }
+
+function Get-File($url, $dest) {
+  Add-Type -AssemblyName System.Net.Http
+  $client = New-Object System.Net.Http.HttpClient
+  $client.DefaultRequestHeaders.UserAgent.ParseAdd('boundless-installer')
+  $client.Timeout = [TimeSpan]::FromMinutes(30)
+  try {
+    $resp = $client.GetAsync($url, [Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
+    $resp.EnsureSuccessStatusCode() | Out-Null
+    $total = $resp.Content.Headers.ContentLength
+    $src = $resp.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
+    $dst = [IO.File]::Create($dest)
+    $buf = New-Object byte[] 262144
+    $read = 0L
+    $clock = [Diagnostics.Stopwatch]::StartNew()
+    $width = 30
+    try {
+      while (($n = $src.Read($buf, 0, $buf.Length)) -gt 0) {
+        $dst.Write($buf, 0, $n)
+        $read += $n
+        if ($clock.ElapsedMilliseconds -ge 80 -and $total) {
+          $clock.Restart()
+          $pct = [Math]::Min(1.0, $read / $total)
+          $fill = [int][Math]::Floor($pct * $width)
+          $bar = (& $Cyan ([string][char]0x2588 * $fill)) + (& $Dim ([string][char]0x2591 * ($width - $fill)))
+          Write-Host -NoNewline ("`r  $bar  {0,3}%  $(Format-MB $read) / $(Format-MB $total) MB " -f [int]($pct * 100))
+        }
+      }
+    } finally { $dst.Dispose(); $src.Dispose() }
+    Clear-Line
+  } finally { $client.Dispose() }
+}
 
 function Install-Boundless {
+  # -- header -----------------------------------------------------------------
   Write-Host ''
-  Write-Host '  Boundless' -ForegroundColor White
-  Write-Host ('  manga ' + [char]0xB7 + ' comics ' + [char]0xB7 + ' novels') -ForegroundColor DarkGray
+  Write-Host ("  " + (& $White (& $Bold 'Boundless')))
+  Write-Host ("  " + (& $Dim "manga $Dot comics $Dot novels"))
   Write-Host ''
 
-  # detect arch
+  # -- detect arch ------------------------------------------------------------
   $arch = $env:PROCESSOR_ARCHITECTURE
   if ($arch -eq 'AMD64') { Ok 'Detected: x64 (AMD64)' }
   elseif ($arch -eq 'ARM64') { Ok 'Detected: ARM64 (runs the x64 build under emulation)' }
@@ -28,21 +114,22 @@ function Install-Boundless {
 
   if ([Environment]::OSVersion.Version.Major -lt 10) { Fail 'Boundless requires Windows 10 or later.' }
 
-  # the Visual C++ runtime is not bundled with the app
+  # The Visual C++ runtime is not bundled with the app.
   if (-not (Test-Path (Join-Path $env:SystemRoot 'System32\vcruntime140.dll'))) {
     Warn 'Microsoft Visual C++ Runtime not found. Install it with:'
-    Write-Host '       winget install Microsoft.VCRedist.2015+.x64'
+    Write-Host ("       " + (& $Dim 'winget install Microsoft.VCRedist.2015+.x64'))
   }
 
-  # latest release that ships a Windows build
-  Info 'Checking for latest release...'
-  try {
-    $releases = Invoke-RestMethod -Headers @{ Accept = 'application/vnd.github+json'; 'User-Agent' = 'boundless-installer' } `
-      -Uri "https://api.github.com/repos/$Repo/releases?per_page=30"
-  } catch { Fail 'Could not reach GitHub. Check your internet connection.' }
-
+  # -- latest release that ships a Windows build ------------------------------
+  $releases = $null
+  Step 'Checking for latest release...' 'Release found' {
+    try {
+      $script:releases = Invoke-RestMethod -Headers @{ Accept = 'application/vnd.github+json'; 'User-Agent' = 'boundless-installer' } `
+        -Uri "https://api.github.com/repos/$Repo/releases?per_page=30"
+    } catch { Fail 'Could not reach GitHub. Check your internet connection.' }
+  }
   $release = $null; $asset = $null
-  foreach ($r in $releases) {
+  foreach ($r in $script:releases) {
     if ($r.draft) { continue }
     $a = $r.assets | Where-Object { $_.name -like 'boundless-v*-windows-x64.zip' } | Select-Object -First 1
     if ($a) { $release = $r; $asset = $a; break }
@@ -50,72 +137,78 @@ function Install-Boundless {
   if (-not $asset) { Fail 'No Windows build found in the releases yet.' }
   $latest = $release.tag_name -replace '^(release-)?v', ''
 
-  # existing install
+  # -- check existing install -------------------------------------------------
   $exe = Join-Path $InstallDir 'boundless.exe'
   $isUpdate = $false
   if (Test-Path $exe) {
-    $installed = ((Get-Item $exe).VersionInfo.ProductVersion -split '\.')[0..2] -join '.'
+    $installed = ((Get-Item $exe).VersionInfo.ProductVersion -split '[.+]')[0..2] -join '.'
     if ($installed -eq $latest) {
       Warn "Boundless $latest is already installed."
-      $reply = Read-Host '  Reinstall anyway? [y/N]'
+      Write-Host ''
+      $reply = Ask 'Reinstall anyway? [y/N]' 'n'
       if ($reply -notmatch '^[Yy]') { Write-Host ''; Write-Host '  Nothing to do.'; Write-Host ''; return }
     } else {
       $isUpdate = $true
-      Ok "Update: $installed  $([char]0x2192)  $latest"
+      Ok ("Update: $installed  $Arrow  " + (& $Bold $latest))
     }
   } else {
-    Ok "Latest version: $latest"
+    Ok ("Latest version: " + (& $Bold $latest))
   }
 
-  # download
-  $tmp = Join-Path ([IO.Path]::GetTempPath()) ("boundless-" + [Guid]::NewGuid().ToString('N'))
+  # -- download ---------------------------------------------------------------
+  $tmp = Join-Path ([IO.Path]::GetTempPath()) ('boundless-' + [Guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Path $tmp | Out-Null
   $zip = Join-Path $tmp 'Boundless.zip'
+  $wasRunning = $false
   try {
     Write-Host ''
-    Write-Host "  Downloading Boundless $latest..." -ForegroundColor DarkGray
-    & curl.exe -fL --progress-bar -o $zip $asset.browser_download_url
-    if ($LASTEXITCODE -ne 0 -or -not (Test-Path $zip)) { Fail 'Download failed.' }
-    Ok 'Downloaded'
+    Write-Host ("  " + (& $Dim "Downloading Boundless $latest..."))
+    try { Get-File $asset.browser_download_url $zip } catch { Fail 'Download failed.' }
+    Ok ("Downloaded  " + (& $Dim "$(Format-MB (Get-Item $zip).Length) MB"))
 
-    # quit a running instance
+    # -- quit running instance if present -------------------------------------
     $running = Get-Process -Name boundless -ErrorAction SilentlyContinue
-    $wasRunning = [bool]$running
     if ($running) {
-      Info 'Quitting Boundless...'
-      $running | ForEach-Object { $null = $_.CloseMainWindow() }
-      Start-Sleep -Seconds 3
-      Get-Process -Name boundless -ErrorAction SilentlyContinue | Stop-Process -Force
-      Ok 'Boundless quit'
+      $wasRunning = $true
+      Step 'Quitting Boundless...' 'Boundless quit' {
+        $running | ForEach-Object { $null = $_.CloseMainWindow() }
+        for ($i = 0; $i -lt 25; $i++) {
+          if (-not (Get-Process -Name boundless -ErrorAction SilentlyContinue)) { break }
+          Start-Sleep -Milliseconds 200
+        }
+        Get-Process -Name boundless -ErrorAction SilentlyContinue | Stop-Process -Force
+      }
     }
 
-    # install
-    Info "Installing to $InstallDir..."
-    if (Test-Path $InstallDir) { Remove-Item -Recurse -Force $InstallDir }
-    New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
-    Expand-Archive -Path $zip -DestinationPath $InstallDir -Force
-    Ok 'Installed'
+    # -- install --------------------------------------------------------------
+    Step 'Installing...' "Installed to $InstallDir" {
+      if (Test-Path $InstallDir) { Remove-Item -Recurse -Force $InstallDir }
+      New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+      Expand-Archive -Path $zip -DestinationPath $InstallDir -Force
+    }
 
-    # Start Menu shortcut
-    $shell = New-Object -ComObject WScript.Shell
-    $lnk = $shell.CreateShortcut($StartMenu)
-    $lnk.TargetPath = $exe
-    $lnk.WorkingDirectory = $InstallDir
-    $lnk.IconLocation = "$exe,0"
-    $lnk.Save()
-    Ok 'Added to the Start menu'
+    Step 'Adding to the Start menu...' 'Added to the Start menu' {
+      $shell = New-Object -ComObject WScript.Shell
+      $lnk = $shell.CreateShortcut($StartMenu)
+      $lnk.TargetPath = $exe
+      $lnk.WorkingDirectory = $InstallDir
+      $lnk.IconLocation = "$exe,0"
+      $lnk.Description = 'Boundless'
+      $lnk.Save()
+    }
   } finally {
     Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
   }
 
+  # -- done -------------------------------------------------------------------
   Write-Host ''
-  if ($isUpdate) { Write-Host "  Updated to Boundless $latest." -ForegroundColor Green }
-  else { Write-Host "  Boundless $latest installed." -ForegroundColor Green }
+  if ($isUpdate) { Write-Host ("  " + (& $Green (& $Bold "Updated to Boundless $latest."))) }
+  else { Write-Host ("  " + (& $Green (& $Bold "Boundless $latest installed."))) }
   Write-Host ''
 
   if ($wasRunning) { Start-Process $exe -WorkingDirectory $InstallDir }
   else {
-    $reply = Read-Host '  Launch Boundless now? [Y/n]'
+    $reply = Ask 'Launch Boundless now? [Y/n]' 'y'
     if ($reply -notmatch '^[Nn]') { Start-Process $exe -WorkingDirectory $InstallDir }
   }
   Write-Host ''
