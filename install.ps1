@@ -131,40 +131,42 @@ function Install-Boundless {
   $release = $null; $asset = $null
   foreach ($r in $script:releases) {
     if ($r.draft) { continue }
-    $a = $r.assets | Where-Object { $_.name -like 'boundless-v*-windows-x64.zip' } | Select-Object -First 1
+    $a = $r.assets | Where-Object { $_.name -like 'boundless-v*-windows-x64.msi' } | Select-Object -First 1
     if ($a) { $release = $r; $asset = $a; break }
   }
   if (-not $asset) { Fail 'No Windows build found in the releases yet.' }
   $latest = $release.tag_name -replace '^(release-)?v', ''
+  $sums = $release.assets | Where-Object { $_.name -eq 'SHA256SUMS.txt' } | Select-Object -First 1
 
   # -- check existing install -------------------------------------------------
-  $exe = Join-Path $InstallDir 'boundless.exe'
-  $isUpdate = $false
-  if (Test-Path $exe) {
-    $installed = ((Get-Item $exe).VersionInfo.ProductVersion -split '[.+]')[0..2] -join '.'
-    if ($installed -eq $latest) {
-      Warn "Boundless $latest is already installed."
-      Write-Host ''
-      $reply = Ask 'Reinstall anyway? [y/N]' 'n'
-      if ($reply -notmatch '^[Yy]') { Write-Host ''; Write-Host '  Nothing to do.'; Write-Host ''; return }
-    } else {
-      $isUpdate = $true
-      Ok ("Update: $installed  $Arrow  " + (& $Bold $latest))
-    }
-  } else {
-    Ok ("Latest version: " + (& $Bold $latest))
-  }
+  $exe = Join-Path $InstallDir 'Boundless.exe'
+  $isUpdate = Test-Path $exe
+  if ($isUpdate) { Ok ("Update to " + (& $Bold $latest)) }
+  else { Ok ("Latest version: " + (& $Bold $latest)) }
 
   # -- download ---------------------------------------------------------------
   $tmp = Join-Path ([IO.Path]::GetTempPath()) ('boundless-' + [Guid]::NewGuid().ToString('N'))
   New-Item -ItemType Directory -Path $tmp | Out-Null
-  $zip = Join-Path $tmp 'Boundless.zip'
+  $msi = Join-Path $tmp 'Boundless.msi'
   $wasRunning = $false
   try {
     Write-Host ''
     Write-Host ("  " + (& $Dim "Downloading Boundless $latest..."))
-    try { Get-File $asset.browser_download_url $zip } catch { Fail 'Download failed.' }
-    Ok ("Downloaded  " + (& $Dim "$(Format-MB (Get-Item $zip).Length) MB"))
+    try { Get-File $asset.browser_download_url $msi } catch { Fail 'Download failed.' }
+    Ok ("Downloaded  " + (& $Dim "$(Format-MB (Get-Item $msi).Length) MB"))
+
+    # -- verify the download against the release's checksums -------------------
+    if ($sums) {
+      Step 'Verifying the download...' 'Checksum matches' {
+        $text = (Invoke-WebRequest -UseBasicParsing -Uri $sums.browser_download_url).Content
+        if ($text -is [byte[]]) { $text = [Text.Encoding]::UTF8.GetString($text) }
+        $line = ($text -split "`n") | Where-Object { $_ -match [regex]::Escape($asset.name) } | Select-Object -First 1
+        if (-not $line) { Fail 'The release has no checksum for this installer.' }
+        $want = ($line.Trim() -split '\s+')[0].ToLower()
+        $have = (Get-FileHash -Algorithm SHA256 -Path $msi).Hash.ToLower()
+        if ($want -ne $have) { Fail 'The download does not match its checksum. Try again.' }
+      }
+    }
 
     # -- quit running instance if present -------------------------------------
     $running = Get-Process -Name boundless -ErrorAction SilentlyContinue
@@ -182,19 +184,11 @@ function Install-Boundless {
 
     # -- install --------------------------------------------------------------
     Step 'Installing...' "Installed to $InstallDir" {
-      if (Test-Path $InstallDir) { Remove-Item -Recurse -Force $InstallDir }
-      New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
-      Expand-Archive -Path $zip -DestinationPath $InstallDir -Force
-    }
-
-    Step 'Adding to the Start menu...' 'Added to the Start menu' {
-      $shell = New-Object -ComObject WScript.Shell
-      $lnk = $shell.CreateShortcut($StartMenu)
-      $lnk.TargetPath = $exe
-      $lnk.WorkingDirectory = $InstallDir
-      $lnk.IconLocation = "$exe,0"
-      $lnk.Description = 'Boundless'
-      $lnk.Save()
+      # A leftover of the earlier Flutter build would sit beside the new files.
+      if (Test-Path (Join-Path $InstallDir 'flutter_windows.dll')) { Remove-Item -Recurse -Force $InstallDir }
+      $p = Start-Process msiexec.exe -Wait -PassThru `
+        -ArgumentList @('/i', "`"$msi`"", '/qn', '/norestart', "INSTALLDIR=`"$InstallDir`"")
+      if ($p.ExitCode -ne 0) { Fail "The installer stopped with code $($p.ExitCode)." }
     }
   } finally {
     Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
