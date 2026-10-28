@@ -356,6 +356,16 @@
   }
 
   function Say([string]$m) { Write-Host $m }
+  function Wrap-Text([string]$text, [int]$width) {
+    $lines = @(); $cur = ''
+    foreach ($word in ($text -split '\s+')) {
+      if ($cur -and ($cur.Length + 1 + $word.Length) -gt $width) { $lines += $cur; $cur = $word }
+      elseif ($cur) { $cur += ' ' + $word }
+      else { $cur = $word }
+    }
+    if ($cur) { $lines += $cur }
+    $lines
+  }
   function Set-Stage([int]$i, [string]$state, [string]$detail) {
     $S.Stage[$i] = $state
     if ($detail -or $state -eq 'active' -or $state -eq 'error') { $S.Detail[$i] = $detail }
@@ -631,6 +641,68 @@
     }
   }
 
+  # ---- what this PC needs ---------------------------------------------------------------------------
+  function Get-SystemDir { if ([Environment]::Is64BitProcess) { Join-Path $env:SystemRoot 'System32' } else { Join-Path $env:SystemRoot 'Sysnative' } }
+  function Test-Requirements {
+    $r = @{ WinBuild = [Environment]::OSVersion.Version.Build; VcOk = $false; VcVersion = ''; Missing = @(); Gpu = @(); GpuNote = ''; Browser = $false; FreeGb = -1.0 }
+    $sys = Get-SystemDir
+    $ver = $null
+    foreach ($n in @('vcruntime140.dll', 'vcruntime140_1.dll', 'msvcp140.dll')) {
+      $f = Join-Path $sys $n
+      if (Test-Path -LiteralPath $f) {
+        if ($n -eq 'vcruntime140.dll') {
+          $v = (Get-Item -LiteralPath $f).VersionInfo
+          $ver = New-Object Version $v.FileMajorPart, $v.FileMinorPart, $v.FileBuildPart, $v.FilePrivatePart
+        }
+      } else { $r.Missing += $n }
+    }
+    if ($ver) { $r.VcVersion = $ver.ToString() }
+    $r.VcOk = ($r.Missing.Count -eq 0) -and ($null -ne $ver) -and ($ver -ge (New-Object Version 14, 28, 0, 0))
+    try {
+      foreach ($g in (Get-CimInstance Win32_VideoController -ErrorAction Stop)) {
+        $d = ''
+        try { if ($g.DriverDate) { $d = ([datetime]$g.DriverDate).ToString('yyyy-MM-dd') } } catch {}
+        $r.Gpu += ('{0} (driver {1} {2})' -f $g.Name, $g.DriverVersion, $d)
+        if ($g.Name -match 'Basic Display|Basic Render') { $r.GpuNote = 'No graphics driver is installed. Update it from Windows Update or NVIDIA, AMD or Intel.' }
+      }
+    } catch {}
+    foreach ($p in @("$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe", "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe", "$env:ProgramFiles\Google\Chrome\Application\chrome.exe", "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe", "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe")) {
+      if (Test-Path -LiteralPath $p) { $r.Browser = $true; break }
+    }
+    try {
+      $drive = (Split-Path -Qualifier $InstallDir).TrimEnd(':')
+      $r.FreeGb = [Math]::Round((Get-PSDrive -Name $drive).Free / 1GB, 1)
+    } catch {}
+    $r
+  }
+  function Summarize-Requirements($req) {
+    ('windows build ' + $req.WinBuild + ' | vc runtime ' + $(if ($req.VcOk) { 'ok ' + $req.VcVersion } else { 'MISSING or old (' + $req.VcVersion + ') ' + ($req.Missing -join ',') }) + ' | gpu ' + ($req.Gpu -join '; ') + ' | browser ' + $req.Browser + ' | free GB ' + $req.FreeGb)
+  }
+  # Downloads Microsoft's own installer of the runtime, checks it is signed by Microsoft and runs it (Windows asks to allow it).
+  function Install-VcRuntime([string]$dir) {
+    $exe = Join-Path $dir 'vc_redist.x64.exe'
+    $sync = [hashtable]::Synchronized(@{ done = $false; bytes = [double]0; total = [double]0; ok = $false })
+    $job = Start-Work $DownloadCode @{ sync = $sync; url = 'https://aka.ms/vs/17/release/vc_redist.x64.exe'; dest = $exe }
+    Wait-Until { $sync.done } $null
+    Stop-Work $job
+    if (-not $sync.ok) { Log ('vc download failed: ' + $sync.error); return 'Could not download the Visual C++ runtime.' }
+    $sig = Get-AuthenticodeSignature -LiteralPath $exe
+    if ($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation') { Log ('vc signature: ' + $sig.Status + ' ' + $sig.SignerCertificate.Subject); return 'The runtime download is not signed by Microsoft, so it was not run.' }
+    if ($env:BOUNDLESS_VC_DRYRUN -eq '1') { Log 'vc dry run: signature ok, not running it'; return 'dryrun' }
+    try {
+      $p = Start-Process -FilePath $exe -ArgumentList @('/install', '/quiet', '/norestart') -Verb RunAs -PassThru
+      $null = $p.Handle
+      while (-not $p.HasExited) { Frame }
+      $p.WaitForExit()
+      Log ('vc installer exit ' + $p.ExitCode)
+      if ($p.ExitCode -eq 0 -or $p.ExitCode -eq 3010 -or $p.ExitCode -eq 1638) { return $null }
+      return ('The runtime installer stopped with code ' + $p.ExitCode + '.')
+    } catch {
+      Log ('vc installer not started: ' + $_.Exception.Message)
+      return 'The runtime installer was not allowed to run.'
+    }
+  }
+
   # ---- the run --------------------------------------------------------------------------------------
   Log ('Boundless installer ' + $InstallerVersion + ' on ' + [Environment]::OSVersion.VersionString + ', PowerShell ' + $PSVersionTable.PSVersion + ', mode ' + $S.Mode + '/' + $S.Tier + ', demo ' + $Demo)
   Log ('install dir ' + $InstallDir + ', data dir ' + $DataDir)
@@ -687,6 +759,32 @@
       if ($asset.browser_download_url -notlike "https://github.com/$Repo/releases/download/*") { Fail 0 'The release points somewhere unexpected, so nothing was downloaded.' @([string]$asset.browser_download_url) }
       $sumsAsset = $rel.assets | Where-Object { $_.name -eq 'SHA256SUMS.txt' } | Select-Object -First 1
     }
+    # this PC: Windows version, disk, the Visual C++ runtime Boundless needs, the graphics driver
+    $req = Test-Requirements
+    Log ('requirements: ' + (Summarize-Requirements $req))
+    $S.Note0 = ''
+    if ($req.WinBuild -lt 17763) { Fail 0 'Boundless needs Windows 10 version 1809 or later.' @('Update Windows, then run the installer again.') }
+    if ($req.FreeGb -ge 0 -and $req.FreeGb -lt 1.5) { Fail 0 'There is not enough free disk space.' @(('{0} GB is free on the install drive and 1.5 GB is needed.' -f $req.FreeGb)) }
+    if ($env:BOUNDLESS_VC_FORCE -eq '1') { $req.VcOk = $false }
+    if (-not $req.VcOk -and ($env:BOUNDLESS_CHECK_ONLY -ne '1' -or $env:BOUNDLESS_VC_FORCE -eq '1')) {
+      Set-Status 'Installing the Visual C++ runtime that Boundless needs' '' 'txt'
+      $S.Detail[0] = 'Microsoft Visual C++ runtime'
+      if ($Demo) { for ($i = 0; $i -lt 30; $i++) { Frame } }
+      else {
+        $vcTmp = Join-Path ([IO.Path]::GetTempPath()) ('boundless-vc-' + [Guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Path $vcTmp | Out-Null
+        try { $vcProblem = Install-VcRuntime $vcTmp } finally { Remove-Item -LiteralPath $vcTmp -Recurse -Force -ErrorAction SilentlyContinue }
+        if ($vcProblem -and $vcProblem -ne 'dryrun') {
+          $S.Note0 = $vcProblem + ' Install it with: winget install Microsoft.VCRedist.2015+.x64'
+          Log ('vc runtime not installed: ' + $vcProblem)
+        } else {
+          $again = Test-Requirements
+          Log ('requirements after the runtime: ' + (Summarize-Requirements $again))
+        }
+      }
+    }
+    if (-not $S.Note0 -and $req.GpuNote) { $S.Note0 = $req.GpuNote }
+    if (-not $S.Note0 -and -not $req.Browser) { $S.Note0 = 'Microsoft Edge or Chrome was not found. It is only needed for the human check some sources ask for.' }
     $instLabel = $null
     if ($Inst.Found) {
       if ($Inst.Legacy) { $instLabel = [string]$Inst.Version + ' (older app)' }
@@ -709,7 +807,7 @@
 
     if ($env:BOUNDLESS_CHECK_ONLY -eq '1') {
       $S.Result = 'checked'
-      $S.Note = ('installed: ' + $(if ($Inst.Found) { $instLabel + ' (product ' + $Inst.Version + ')' } else { 'none' }) + ' | latest: ' + $latestVer + ' (build ' + $latestBuild + ') | relation: ' + $relation + ' | dir: ' + $InstallDir)
+      $S.Note = ('installed: ' + $(if ($Inst.Found) { $instLabel + ' (product ' + $Inst.Version + ')' } else { 'none' }) + ' | latest: ' + $latestVer + ' (build ' + $latestBuild + ') | relation: ' + $relation + ' | dir: ' + $InstallDir + "`nthis PC: " + (Summarize-Requirements $req) + $(if ($S.Note0) { "`nnote: " + $S.Note0 } else { '' }))
       return
     }
     $Reinstall = $false
@@ -896,9 +994,14 @@
     elseif ($relation -eq 'update') { Set-Status ('Updated to Boundless ' + $latestVer) '' 'ok' }
     else { Set-Status ('Boundless ' + $latestVer + ' is installed') '' 'ok' }
     $S.Foot = @('Open Boundless from the Start menu or the button below.', 'Your library and settings live in %LOCALAPPDATA%\Boundless.', ('Log: ' + $LogFile))
+    if ($S.Note0) {
+      $nl = @(Wrap-Text $S.Note0 ($IW - 6))
+      $S.Foot = @($nl[0], $(if ($nl.Count -gt 1) { $nl[1] } else { '' }), ('Log: ' + $LogFile))
+    }
     $S.Result = 'installed'
     if ($S.Mode -eq 'plain') {
       Say ''; Say ($S.Status + '.')
+      if ($S.Note0) { Say ('Note: ' + $S.Note0) }
       if (-not $Demo -and -not $S.NoKeys) {
         $reply = Read-Host 'Launch Boundless now? [Y/n]'
         if ($reply -notmatch '^[Nn]') { try { Start-Process (Join-Path $InstallDir 'Boundless.exe') -WorkingDirectory $InstallDir } catch {} }
