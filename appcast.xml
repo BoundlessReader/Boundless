@@ -9,15 +9,15 @@
     <language>en</language>
     <item>
       <title>Version 3.5.5</title>
-      <sparkle:version>179</sparkle:version>
+      <sparkle:version>180</sparkle:version>
       <sparkle:shortVersionString>3.5.5</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
       <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-      <pubDate>Sat, 14 Nov 2026 14:25:17 +0000</pubDate>
+      <pubDate>Sat, 14 Nov 2026 15:16:41 +0000</pubDate>
       <enclosure
-        url="https://github.com/BoundlessReader/BoundlessReader/releases/download/v3.5.5/boundless-v3.5.5-macos.dmg"
-        sparkle:edSignature="ZdP9NyvrZEi7hZnyjz1seC5Gg2kssotSymzo/oNFuIwEKyaKr/LnGD5SIYJDCnScfT0M5llT15GMxjwFXlzTAQ=="
-        length="29201951"
+        url="https://github.com/BoundlessReader/BoundlessReader/releases/download/v3.5.5/boundless-v3.5.5-macos-apple-silicon.dmg"
+        sparkle:edSignature="h0hhdAMK4O0o5mCVvPr+T3c/u+Y0/Bks2eW7rEg15bKQ96QrliujHHQyhRzOyMeYZwHB4TMEg3RGKfaTD+JgAA=="
+        length="29218355"
         type="application/octet-stream"/>
     </item>
     <item>
